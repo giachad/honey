@@ -1,3 +1,5 @@
 # 🐝 honey
 
-high level, clean, modern programming language
+* high level
+* modern
+* simple
