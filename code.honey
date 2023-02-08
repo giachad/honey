@@ -1,0 +1,10 @@
+function hello(mehh, eee) {
+    local test = "ok, this is a string = yes"
+    local test2 = ""
+    local test3 = ""
+}
+
+local test = 5 * 2 / 82
+local this_is_a_test
+
+echo(test)
