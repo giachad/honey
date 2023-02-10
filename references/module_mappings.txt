@@ -1,1 +1,1 @@
-math=https://github.com/giachad/honey/edit/main/modules/math.honey
+math=https://raw.githubusercontent.com/giachad/honey/main/modules/math.honey
