@@ -18,7 +18,9 @@ def readlines(where):
     return c
 
 class Script(object):
-    def __init__(self, code) -> None:
+    def __init__(self, code, scriptFunctionName) -> None:
+        self.scriptFunctionName = scriptFunctionName
+
         self.code = code
         variables = {}
         functions = {}
@@ -42,8 +44,6 @@ class Script(object):
             else:
                 if currentFunctionName != "":
                     if line.lstrip(" ").rstrip("\n").startswith("return"):
-                        print(self.getValueFromBrackets(line.lstrip(" ").rstrip("\n")))
-
                         functions[currentFunctionName]["return"] = self.getValueFromBrackets(line.lstrip(" ").rstrip("\n"))
 
                     functions[currentFunctionName]["lines"].append(line.lstrip(" ").rstrip("\n"))    
@@ -121,17 +121,22 @@ class Script(object):
                 elif self.isUrl(where):
                     importedScriptCode = str(requests.get(where).text).rstrip("\n").splitlines()
                     importedScript = Script(importedScriptCode)
+
+            elif line.startswith("return"):
+                print("1")
+                if self.scriptFunctionName != "":
+                    print("2")
+                    if functions.get(self.scriptFunctionName):
+                        print(functions)
+                        functions[self.scriptFunctionName]["return"] = self.checkValue(self.getValueFromBrackets(line))
+                        print(functions)
+                else:
+                    honeyError("can only run return() inside functions")
                     
             elif functions.get(str(line).split("(")[0].rstrip("\n")):
                 functionName = str(line).split("(")[0].rstrip("\n")
 
-                for index, parametre in enumerate(str(line).split("(")[1].rstrip(")").split(", ")):
-                    try:
-                        variables[functions[functionName]["parametres"][index]] = self.checkValue(parametre)
-                    except:
-                        honeyError("no parametre of index "+str(index))
-
-                self.runCode(functions[functionName]["lines"])
+                self.runFunction(functionName)
 
     def checkValue(self, what_):
         try:
@@ -153,14 +158,26 @@ class Script(object):
             elif self.isJson(what_):
                 return json.loads(what_)
             elif functions.get(what_.split("(")[0]):
-                print(what_.split("(")[0].rstrip("\n"))
-                newnewWhat = what_.split("(")[0]
-                if functions[newnewWhat]["return"] != None:
-                    return functions[what_.split("(")[0]]["return"]
+                functionName = str(what_).split("(")[0]
+                if functions.get(functionName):
+                    self.runFunction(what_)
             else:
                 return "nil"
         except Exception as err:
             honeyError(str(err))
+
+    def runFunction(self, line):
+
+        functionName = str(line.split("(")[0]).rstrip("\n")
+
+        for index, parametre in enumerate(str(line).split("(")[1].rstrip(")").split(", ")):
+            try:
+                variables[functions[functionName]["parametres"][index]] = self.checkValue(parametre)
+            except:
+                honeyError("no parametre of index "+str(index))
+
+        self.runCode(functions[functionName]["lines"])
+
                     
     def isNumberic(self, what):
         try:
@@ -184,5 +201,27 @@ class Script(object):
         except:
             return False
 
+class Installer:
+    def __init__(self) -> None:
+        pass
 
-script = Script(readlines("script.honey"))
+    def install(self, name):
+        moduleMappings = "https://raw.githubusercontent.com/giachad/honey/main/references/module_mappings.txt"
+        response = str(requests.get(moduleMappings).text).splitlines()
+        for line in response:
+            line = str(line).rstrip("\n")
+            mapName = line.split("=")[0]
+            mapValue = line.split("=")[1]
+
+            if mapName == name:
+                response = str(requests.get(mapValue).text)
+                f = open(mapName+".honey", "w")
+                f.write(response)
+                f.close()
+                honeyError(f"successfully installed module '{mapName}'")
+                return True
+        
+        honeyError(f"error installing module '{name}'")
+
+
+script = Script(readlines("script.honey"), "")
